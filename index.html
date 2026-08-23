@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta name="theme-color" content="#f2ecdd"/>
+<title>マンボウ・オーバーフロー ― 30世代観察記録</title>
+<style>
+:root{
+  --paper:#f2ecdd; --paper2:#fbf7ec; --paper3:#efe7d2;
+  --ink:#2c3a45; --ink-soft:#5c6b76; --ink-faint:#8a97a0;
+  --line:#44525d; --pencil:#c9bfa6;
+  --blue:#2b6e9e; --blue-soft:#d9e6ef;
+  --teal:#2f9e83; --teal-soft:#e4f1ea;
+  --red:#c14a35; --gold:#b98a2e;
+  --font-m:"Hiragino Mincho ProN","Yu Mincho","BIZ UDMincho","Noto Serif JP",serif;
+  --font-s:"Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP","Yu Gothic UI",sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:radial-gradient(1200px 600px at 70% -10%,#f7f2e6 0%,var(--paper) 55%) fixed,var(--paper);color:var(--ink);font-family:var(--font-s);font-size:14px;line-height:1.65;min-height:100vh;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button{font-family:inherit;touch-action:manipulation}
+#sea-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.swimmer{position:absolute;left:0;opacity:0;transition:opacity 2.5s ease;animation-name:swim-r;animation-timing-function:linear;animation-iteration-count:infinite}
+.swimmer.on{opacity:var(--op,.45)}
+.swimmer.ltr{animation-name:swim-l}
+#sea-bg.danger .swimmer{filter:hue-rotate(-45deg) saturate(1.6)}
+@keyframes swim-r{from{transform:translateX(-220px)}to{transform:translateX(110vw)}}
+@keyframes swim-l{from{transform:translateX(110vw)}to{transform:translateX(-220px)}}
+.swim-bob{width:100%;animation:bob 5.5s ease-in-out infinite}
+.swim-bob svg{display:block;width:100%;height:auto;transform:rotate(var(--rot,90deg))}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+.plankton{position:absolute;top:0;border-radius:50%;background:radial-gradient(circle,rgba(96,125,146,.75) 0%,rgba(96,125,146,0) 70%);animation:plank linear infinite}
+@keyframes plank{from{transform:translateY(104vh)}to{transform:translateY(-6vh)}}
+header#top{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 22px;border-bottom:3px double var(--line);flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:14px}
+.brand-manta{width:56px;height:auto;animation:float 5s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-6px) rotate(3deg)}}
+h1{font-family:var(--font-m);font-size:21px;letter-spacing:.08em}
+.sub{font-size:11px;color:var(--ink-soft);letter-spacing:.25em}
+.run-stamp{display:inline-block;border:2px solid var(--red);color:var(--red);padding:2px 10px;border-radius:2px;transform:rotate(2.5deg);font-size:11px;font-weight:700;letter-spacing:.1em;opacity:.85;margin-left:10px}
+.chips{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chip{background:var(--paper2);border:1.5px solid var(--line);border-radius:2px;padding:5px 13px;font-size:12px;color:var(--ink-soft)}
+.chip b{color:var(--ink);font-size:14px;margin-left:4px;font-variant-numeric:tabular-nums;font-family:var(--font-m)}
+.chip.guide-btn{cursor:pointer}
+.chip.guide-btn:hover{border-color:var(--blue);color:var(--blue)}
+main{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;padding:18px 22px;max-width:1140px;margin:0 auto;align-items:start}
+@media (max-width:920px){main{grid-template-columns:1fr}}
+.col-left,.col-right{display:flex;flex-direction:column;gap:16px;min-width:0}
+.panel{background:var(--paper2);border:1.5px solid var(--line);border-radius:2px;padding:16px 18px;box-shadow:3px 3px 0 rgba(68,82,93,.13)}
+#panel-journal{max-height:400px;display:flex;flex-direction:column}
+.status-top{margin-bottom:12px}
+.panel-title{font-family:var(--font-m);font-size:13px;letter-spacing:.12em;color:var(--ink);margin-bottom:10px;border-bottom:1px solid var(--pencil);padding-bottom:6px}
+.hint{letter-spacing:0;font-size:11px;color:var(--ink-faint);font-family:var(--font-s)}
+/* 海面観測：海図パネル */
+#panel-status{background:var(--paper2) ;background-image:repeating-linear-gradient(0deg,transparent 0 23px,rgba(68,82,93,.06) 23px 24px),repeating-linear-gradient(90deg,transparent 0 23px,rgba(68,82,93,.06) 23px 24px)}
+.sea-head{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);margin-bottom:6px}
+.sea{height:44px;border-radius:2px;background:var(--paper);border:1.5px solid var(--line);overflow:hidden;position:relative}
+.sea-fill{height:100%;width:0%;background:rgba(47,158,131,.14) repeating-linear-gradient(135deg,rgba(47,158,131,.45) 0 3px,transparent 3px 9px);transition:width .8s ease}
+.sea-danger .sea{border-color:var(--red)}
+.sea-danger .sea-fill{background:rgba(193,74,53,.14) repeating-linear-gradient(135deg,rgba(193,74,53,.5) 0 3px,transparent 3px 9px)}
+.pop-label{font-size:12px;color:var(--ink-soft);letter-spacing:.15em}
+.pop-num{font-family:var(--font-m);font-size:44px;font-weight:700;letter-spacing:.02em;line-height:1.25}
+.pop-sub{font-size:12px;color:var(--ink-faint)}
+.stat{margin-bottom:13px}
+.stat:last-child{margin-bottom:0}
+.stat-head{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;font-family:var(--font-m)}
+.sval{display:flex;align-items:baseline;gap:7px}
+.stat-head .val{font-variant-numeric:tabular-nums;color:var(--ink);font-weight:700}
+.proj{color:var(--blue);font-size:12px;font-variant-numeric:tabular-nums}
+.track{position:relative;height:16px;background:#fffdf4;border:1.5px solid var(--line);border-radius:2px;overflow:hidden}
+.band{position:absolute;top:0;bottom:0;background:repeating-linear-gradient(45deg,rgba(47,158,131,.28) 0 3px,transparent 3px 7px);border-left:1px solid var(--teal);border-right:1px solid var(--teal)}
+.fill{position:absolute;top:0;bottom:0;left:0;transition:width .5s ease,background .5s}
+.fill.in{background:var(--teal)}
+.fill.low{background:#5d7f9e}
+.fill.high{background:var(--red)}
+.marker{position:absolute;top:-1px;bottom:-1px;width:3px;background:var(--gold)}
+.stat-real{font-size:11px;color:var(--ink-faint);margin-top:3px}
+.news-text{font-family:var(--font-m);font-size:15px;font-weight:600}
+.news-sub{font-size:12px;color:var(--ink-soft);margin-top:4px}
+#panel-news{border-left:5px solid var(--red)}
+.slots{display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap}
+.slot{display:flex;align-items:center;gap:6px;background:transparent;border:1.5px dashed var(--ink-faint);border-radius:2px;padding:5px 8px 5px 14px;font-size:12px;min-width:172px}
+.slot-label{color:var(--ink-faint);white-space:nowrap}
+.slot-name{color:var(--ink);font-weight:700;flex:1;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot-x{background:none;border:none;color:var(--red);font-size:15px;cursor:pointer;line-height:1;padding:3px 8px;border-radius:2px}
+.slot-x:hover{background:rgba(193,74,53,.12)}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:4px}
+@media (max-width:700px){.cards{grid-template-columns:repeat(2,1fr)}}
+.card{position:relative;background:#fdfaf1;border:1.5px solid var(--line);border-radius:2px;padding:10px 11px;cursor:pointer;text-align:left;color:var(--ink);transition:border-color .15s,transform .08s,box-shadow .15s;box-shadow:2px 2px 0 rgba(68,82,93,.13)}
+.card:hover{transform:translate(-1px,-1px);box-shadow:3px 3px 0 rgba(68,82,93,.18)}
+.card:active{transform:scale(.98)}
+.card.sel{border-color:var(--teal);background:var(--teal-soft);box-shadow:2px 2px 0 rgba(47,158,131,.3)}
+.card.sel::after{content:'方針中';position:absolute;top:-9px;right:-7px;background:var(--paper2);border:1.5px solid var(--teal);color:var(--teal);font-size:10px;font-weight:700;padding:1px 6px;border-radius:2px;transform:rotate(4deg)}
+.card.off{opacity:.4;cursor:not-allowed}
+.card.off:hover{transform:none}
+.card-name{font-family:var(--font-m);font-size:13px;font-weight:700}
+.card-flavor{font-size:11px;color:var(--ink-soft);margin:2px 0 5px}
+.card-fx{font-size:11px;font-variant-numeric:tabular-nums;line-height:1.5}
+.fx-pos{color:var(--blue)}
+.fx-neg{color:var(--gold)}
+.fx-toward{color:var(--teal)}
+.fx-away{color:var(--red)}
+.btn{display:inline-flex;align-items:center;justify-content:center;width:100%;background:var(--blue);color:#f7f2e4;border:1.5px solid #24587c;border-radius:2px;padding:11px;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.06em;box-shadow:2px 2px 0 rgba(44,58,69,.28);transition:transform .06s,box-shadow .06s}
+.btn:hover{filter:brightness(1.06)}
+.btn:active{transform:translate(2px,2px);box-shadow:0 0 0 rgba(0,0,0,0)}
+.btn.ghost{background:transparent;color:var(--ink-soft);border:1.5px solid var(--line);font-weight:400;font-size:13px;margin-top:8px;box-shadow:none}
+.btn.ghost:hover{color:var(--blue);border-color:var(--blue)}
+.btn.ghost:active{transform:none}
+.btn.small{width:auto;padding:8px 16px;font-size:13px}
+.btn.ghosty{background:transparent;color:var(--ink-soft);border:1.5px solid var(--line);font-weight:400;box-shadow:none}
+.btn.ghosty:hover{color:var(--blue);border-color:var(--blue)}
+.btn.ghosty:active{transform:none}
+.timerwrap{margin-bottom:12px}
+.timerhead{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);margin-bottom:5px;font-family:var(--font-m)}
+.timerbar{height:9px;background:var(--paper3);border:1.5px solid var(--line);border-radius:2px;overflow:hidden}
+.timerfill{height:100%;width:0%;background:var(--blue)}
+.ctrlrow{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.journal{overflow-y:auto;font-size:12.5px;flex:1;font-family:var(--font-m);border-left:2px solid rgba(193,74,53,.35);margin-left:16px;padding-left:14px}
+.j-item{border-bottom:1px dashed var(--pencil);padding:8px 2px;color:var(--ink-soft)}
+.j-item b{color:var(--ink)}
+footer{position:relative;z-index:1;text-align:center;color:var(--ink-faint);font-size:12px;padding:10px 0 26px;font-family:var(--font-m)}
+.overlay{position:fixed;inset:0;background:rgba(242,236,221,.97);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
+.hidden{display:none}
+.overlay-box{max-width:660px;width:100%;background:var(--paper2);border:2px solid var(--line);border-radius:3px;padding:36px 34px;text-align:center;margin:auto;box-shadow:6px 6px 0 rgba(68,82,93,.18)}
+.overlay-box h2{font-family:var(--font-m);font-size:27px;letter-spacing:.1em;margin:12px 0 14px}
+.overlay-box p{color:var(--ink-soft);font-size:14px;margin-bottom:8px;white-space:pre-line;font-family:var(--font-m)}
+.big-manta{width:150px;animation:float 5s ease-in-out infinite;margin:0 auto;display:block}
+.postmortem{background:var(--paper);border:1.5px solid var(--line);border-left:5px solid var(--red);border-radius:2px;padding:12px 16px;font-size:13px;color:var(--ink);margin:16px 0;font-family:var(--font-m)}
+.end-stats{font-size:12px;color:var(--ink-faint);margin-bottom:18px;font-variant-numeric:tabular-nums;white-space:pre-line}
+/* 導入＝資料の表紙 */
+.intro-doc{text-align:left;position:relative}
+.doc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.doc-top span:first-child{font-size:11px;letter-spacing:.2em;color:var(--ink-faint)}
+.doc-stamp{border:2.5px solid var(--red);color:var(--red);padding:3px 12px;border-radius:2px;transform:rotate(-4deg);font-size:12px;font-weight:700;letter-spacing:.25em;opacity:.85}
+.doc-manta-row{position:absolute;top:30px;right:36px;width:104px;transform:rotate(7deg)}
+.doc-manta-row svg{display:block;width:100%;height:auto;animation:float 6s ease-in-out infinite}
+.intro-doc h2{text-align:left;font-size:32px;letter-spacing:.12em;margin:16px 0 0}
+.doc-rule{border-top:3px double var(--line);margin:14px 0 18px}
+.intro-doc .btn{width:100%}
+/* 事故報告＝赤いスタンプ */
+.inc-box{border:2px solid var(--line)}
+.inc-kicker{display:inline-block;border:2.5px solid var(--red);color:var(--red);padding:3px 14px;border-radius:2px;transform:rotate(-5deg);font-size:12px;font-weight:700;letter-spacing:.35em;opacity:.85;margin-bottom:12px;font-family:var(--font-m)}
+.inc-body{text-align:left}
+.inc-choice{display:block;width:100%;background:#fdfaf1;color:var(--ink);border:1.5px solid var(--line);border-radius:2px;padding:12px;margin-top:8px;font-size:14px;cursor:pointer;text-align:left;font-family:var(--font-m);box-shadow:2px 2px 0 rgba(68,82,93,.13);transition:transform .06s,box-shadow .06s}
+.inc-choice:hover{border-color:var(--blue);transform:translate(-1px,-1px);box-shadow:3px 3px 0 rgba(68,82,93,.18)}
+.guide-table{width:100%;font-size:12px;border-collapse:collapse;margin:10px 0;text-align:left;font-family:var(--font-m)}
+.guide-table th{color:var(--ink-soft);font-weight:400;text-align:left;padding:4px 6px;border-bottom:1.5px solid var(--line)}
+.guide-table td{padding:5px 6px;border-bottom:1px dashed var(--pencil);color:var(--ink)}
+.guide-table td.range{color:var(--teal);font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:700}
+.guide-box{max-height:72vh;overflow-y:auto;text-align:left}
+.guide-box h3{font-size:14px;color:var(--blue);margin:14px 0 6px;letter-spacing:.1em;font-family:var(--font-m)}
+.guide-box li{font-size:13px;color:var(--ink-soft);margin-bottom:5px;font-family:var(--font-m)}
+.guide-box .concl{color:var(--ink);font-size:14px;margin-top:14px;font-family:var(--font-m)}
+
+/* ---- difficulty modes ---- */
+.mode-row{display:flex;gap:14px;margin-top:22px;justify-content:center}
+.mode-label{font-size:12px;letter-spacing:.1em;color:var(--ink-soft);font-family:var(--font-m);align-self:center}
+.mode-btn{flex:1;max-width:240px}
+.mode-btn.active{background:var(--ink);color:#f2ecdd}
+.mode-chip{font-family:var(--font-m);letter-spacing:.06em;background:var(--red);color:#fff;padding:0 10px}
+body.hard .band{display:none}
+body.hard .fill{background:#5d7f9e}
+body.hard .stat-real{display:none}
+body.hard .fx-toward,body.hard .fx-away,body.hard .fx-pos,body.hard .fx-neg{color:var(--ink-soft)}
+.hard-hide{display:none!important}
+body:not(.hard) .hard-only{display:none}
+
+/* ---- スマートフォン対応 ---- */
+@media (max-width:700px){
+  main{grid-template-columns:1fr;padding:14px 12px}
+  .col-left,.col-right{gap:12px}
+  .panel{padding:12px}
+  .cards{grid-template-columns:1fr 1fr}
+  .pop-num{font-size:34px}
+  h1{font-size:17px}
+  .sub{font-size:10px;letter-spacing:.18em}
+  header#top{padding:12px 12px;flex-direction:column;align-items:stretch;gap:10px}
+  .brand{flex-wrap:wrap;gap:10px}
+  .brand-manta{width:44px}
+  .run-stamp{margin-left:0}
+  .chips{gap:6px;justify-content:flex-start}
+  .chip{padding:4px 10px;font-size:11px}
+  .chip b{font-size:12px}
+  .overlay-box{padding:26px 18px}
+  .intro-doc h2{font-size:24px;letter-spacing:.06em}
+  .big-manta{width:110px}
+  .overlay-box h2{font-size:22px}
+  .mode-row{flex-wrap:wrap}
+  .mode-label{flex-basis:100%;text-align:center}
+  .mode-btn{flex:1 1 140px;max-width:none}
+  .ctrlrow .btn{flex:1}
+  .doc-manta-row{position:static;transform:rotate(7deg);width:80px;margin:6px auto 0}
+  .sea{height:38px}
+  .slot{min-width:150px}
+  .slot-x{padding:6px 12px;font-size:16px}
+  .chip.guide-btn{padding:6px 12px}
+  .journal{font-size:12px}
+  .news-text{font-size:14px}
+  .end-stats{font-size:11px}
+  footer{padding-bottom:18px}
+}
+@media (max-width:400px){
+  body{font-size:13px}
+  .card-fx{font-size:10px}
+  .card-flavor{font-size:10px}
+  .card-name{font-size:12px}
+  .stat-head{font-size:12px}
+  .slot{min-width:128px}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <g id="kawaii-manta">
+      <g>
+        <path fill="#b8e2d0" stroke="#33566b" stroke-width="3" stroke-linejoin="round" d="M88,64C66,62,40,70,22,80C17,83,17,89,23,92C42,101,66,106,88,108C84,94,84,78,88,64Z"/>
+        <animateTransform attributeName="transform" type="rotate" values="0 88 86;11 88 86;0 88 86" dur="3.2s" repeatCount="indefinite"/>
+      </g>
+      <g>
+        <path fill="#b8e2d0" stroke="#33566b" stroke-width="3" stroke-linejoin="round" d="M112,64C134,62,160,70,178,80C183,83,183,89,177,92C158,101,134,106,112,108C116,94,116,78,112,64Z"/>
+        <animateTransform attributeName="transform" type="rotate" values="0 112 86;-11 112 86;0 112 86" dur="3.2s" repeatCount="indefinite"/>
+      </g>
+      <path fill="#b8e2d0" stroke="#33566b" stroke-width="3" stroke-linejoin="round" d="M100,38C113,40,121,50,124,60C127,76,127,100,124,116C119,126,110,132,100,133C90,132,81,126,76,116C73,100,73,76,76,60C79,50,87,40,100,38Z"/>
+      <path fill="#b8e2d0" stroke="#33566b" stroke-width="3" stroke-linejoin="round" d="M95,128C95,140,97,150,100,156C103,150,105,140,105,128C104,131,96,131,95,128Z"/>
+      <path fill="#b8e2d0" stroke="#33566b" stroke-width="3" stroke-linejoin="round" d="M88,46C82,41,77,36,75,31C81,33,87,38,90,43C90,46,89,47,88,46Z"/>
+      <path fill="#b8e2d0" stroke="#33566b" stroke-width="3" stroke-linejoin="round" d="M112,46C118,41,123,36,125,31C119,33,113,38,110,43C110,46,111,47,112,46Z"/>
+      <circle cx="86" cy="64" r="9.5" fill="#ffffff" stroke="#33566b" stroke-width="1.5"/>
+      <circle cx="114" cy="64" r="9.5" fill="#ffffff" stroke="#33566b" stroke-width="1.5"/>
+      <circle cx="88" cy="66" r="4.6" fill="#2c3a45"/>
+      <circle cx="112" cy="66" r="4.6" fill="#2c3a45"/>
+      <circle cx="86" cy="62.5" r="1.8" fill="#ffffff"/>
+      <circle cx="110" cy="62.5" r="1.8" fill="#ffffff"/>
+      <path d="M94,79Q100,85,106,79" fill="none" stroke="#2c3a45" stroke-width="2.6" stroke-linecap="round"/>
+      <ellipse cx="77" cy="74" rx="4.5" ry="2.6" fill="#f0a8b6" opacity="0.55"/>
+      <ellipse cx="123" cy="74" rx="4.5" ry="2.6" fill="#f0a8b6" opacity="0.55"/>
+    </g>
+  </defs>
+</svg>
+
+<div id="sea-bg"></div>
+
+<header id="top">
+  <div class="brand">
+    <svg class="brand-manta" viewBox="0 0 200 170"><use href="#kawaii-manta"/></svg>
+    <div>
+      <h1>マンボウ・オーバーフロー</h1>
+      <div class="sub">30世代観察記録</div>
+    </div>
+    <div class="run-stamp" id="run-stamp">調査第 - 回</div>
+    <div class="mode-chip hard-only">無ヒント</div>
+  </div>
+  <div class="chips">
+    <div class="chip">世代<b id="chip-gen">-</b></div>
+    <div class="chip">実在マンボウ度（温かさ）<b id="chip-stab">-</b></div>
+    <div class="chip">海被覆率<b id="chip-cov">-</b></div>
+    <button class="chip guide-btn" id="btn-guide">マンボウ資料図鑑</button>
+    <button class="chip guide-btn" id="btn-howto">遊び方</button>
+    <button class="chip guide-btn" id="btn-reroll">振り直し（新規個体群）</button>
+  </div>
+</header>
+
+<main>
+  <div class="col-left">
+    <section class="panel" id="panel-status">
+      <div class="status-top">
+        <div class="pop-label">マンボウ個体数</div>
+        <div class="pop-num" id="pop-num">-</div>
+        <div class="pop-sub" id="pop-sub"></div>
+      </div>
+      <div class="sea-head"><span>海面観測 ― 海がマンボウ化している割合</span><span id="sea-label"></span></div>
+      <div class="sea"><div class="sea-fill" id="sea-fill"></div></div>
+    </section>
+
+    <section class="panel" id="panel-stats">
+      <div class="panel-title">観察パラメータ <span class="hint hard-hide">（斜線ゾーン＝実在のマンボウの値／金色の目盛り＝次の世代の予測）</span><span class="hint hard-only">（金色の目盛り＝次の世代の予測）</span></div>
+      <div id="stats"></div>
+    </section>
+
+    <section class="panel" id="panel-cards">
+      <div class="panel-title">現在の対策 <span class="hint">毎世代、自動で適用されます。いつでも差し替え・解除可能</span></div>
+      <div class="slots">
+        <div class="slot"><span class="slot-label">方針1</span><span class="slot-name" id="slot-name-0">空き</span><button class="slot-x" id="slot-x-0" style="display:none">×</button></div>
+        <div class="slot"><span class="slot-label">方針2</span><span class="slot-name" id="slot-name-1">空き</span><button class="slot-x" id="slot-x-1" style="display:none">×</button></div>
+        <button class="btn small ghosty" id="btn-clear" style="margin-left:auto">全解除</button>
+      </div>
+      <div class="timerwrap">
+        <div class="timerhead"><span id="timer-label">第1世代</span><span id="timer-state">待機中</span></div>
+        <div class="timerbar"><div class="timerfill" id="timerfill"></div></div>
+      </div>
+      <div class="ctrlrow">
+        <button class="btn small" id="btn-skip">次の世代</button>
+        <button class="btn small ghosty" id="btn-pause">観察開始</button>
+        <button class="btn small ghosty" id="btn-speed">通常速度</button>
+      </div>
+      <div id="cards" class="cards"></div>
+    </section>
+  </div>
+  <div class="col-right">
+    <section class="panel" id="panel-news">
+      <div class="panel-title">ニュース配線</div>
+      <div id="news-text" class="news-text"></div>
+      <div id="news-sub" class="news-sub"></div>
+    </section>
+
+    <aside class="panel" id="panel-journal">
+      <div class="panel-title">観察日誌</div>
+      <div id="journal" class="journal"></div>
+    </aside>
+  </div>
+</main>
+
+<footer><span class="hard-hide">ヒント：最適解は「本物のマンボウのままでいること」です。</span></footer>
+
+<div class="overlay" id="intro">
+  <div class="overlay-box intro-doc">
+    <div class="doc-top"><span>海洋保守省・マンボウ保全事業</span><span class="doc-stamp">観察許可</span></div>
+    <div class="doc-manta-row"><svg viewBox="0 0 200 170"><use href="#kawaii-manta"/></svg></div>
+    <h2>マンボウ・オーバーフロー</h2>
+    <div class="doc-rule"></div>
+    <p>海が変わっている。
+かつては脆かったマンボウが、いま絶滅の淵にいる。
+省は30世代の観察期間を決めた。
+あなたの仕事は、彼らの生存率と知能を上げて、
+泳ぎ続けてもらうこと。</p>
+    <p>注：マンボウは実際には卵を産まない。
+だが予算書には「卵」と書いてある。
+予算書に従う。</p>
+    <div class="mode-row">
+      <span class="mode-label">観察モード</span>
+      <button class="btn ghost mode-btn" id="mode-easy">かんたん</button>
+      <button class="btn ghost mode-btn" id="mode-hard">むずかしい</button>
+    </div>
+    <button class="btn" id="btn-start">観察を開始</button>
+    <button class="btn ghost" id="btn-howto2">遊び方</button>
+    <button class="btn ghost" id="btn-guide2">マンボウ資料図鑑</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="guide">
+  <div class="overlay-box guide-box">
+    <h2 style="font-size:20px">マンボウ資料図鑑（調査員向け）</h2>
+    <ul>
+      <li>翼開長は最大約7m。泳ぐというより、滑空する。</li>
+      <li>食性はプランクトン。水面で口を開けて漉し取る、濾過摂食。</li>
+      <li>繁殖は3〜4年ごとに1〜2子。遅い、としか言いようがない。</li>
+      <li>知能は魚としてはかなり高い。鏡で自分の姿を認識した例がある（2016年）。ただし、人間レベルには程遠い。</li>
+      <li>ポッドと呼ばれる群れで暮らす。クリーニングステーションに集まる。</li>
+      <li>約2800万年前の化石が知られる。海は古くから、おそらくこれからも、彼らの領土のはずだった。</li>
+      <li>現在は巻き込み漁やヒレ取引で減っている。現代の海は、彼らにとって危険すぎる。</li>
+    </ul>
+    <div class="hard-hide">
+    <h3>実在パラメータ</h3>
+    <table class="guide-table">
+      <tr><th>パラメータ</th><th>実在の値</th><th>根拠</th></tr>
+      <tr><td>知能 (IQ)</td><td class="range">50–70</td><td>魚としては賢い。人間には遠く及ばない</td></tr>
+      <tr><td>生存性</td><td class="range">30–55</td><td>脆いが、2800万年安定していた</td></tr>
+      <tr><td>社会性</td><td class="range">40–65</td><td>ポッドとクリーニングステーション</td></tr>
+      <tr><td>食欲（栄養段階）</td><td class="range">10–35</td><td>プランクトンのみ</td></tr>
+      <tr><td>繁殖速度</td><td class="range">15–40</td><td>3〜4年に1〜2子</td></tr>
+    </table>
+    <p class="concl">結論：一番いいマンボウは、実在するマンボウだ。<br/>賢くなりすぎさせず、速くなりすぎさせず、そのままにしておく。これはプレイヤーへの注意書きだ。</p>
+    </div>
+    <p class="concl hard-only">※ 数値の目安は記載されていない。調査員の判断に委ねる。</p>
+    <button class="btn" id="guide-close">閉じる</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="howto">
+  <div class="overlay-box guide-box">
+    <h2 style="font-size:20px">遊び方</h2>
+    <h3>目標</h3>
+    <p class="hard-hide" style="font-size:13px;color:var(--ink-soft)">30世代、マンボウを「実在のマンボウ」のままで観察し続ける。バーの斜線ゾーンが、実在するマンボウの値です。</p>
+    <p class="hard-only" style="font-size:13px;color:var(--ink-soft)">30世代、マンボウを「実在のマンボウ」のままで観察し続ける。実在のマンボウがどのような生物か、資料図鑑に記述がある。よく読め。</p>
+    <h3>3つの結末</h3>
+    <ul>
+      <li><b style="color:#5d7f9e">賢くなりすぎない：</b>知能が30を切ると、現代の海（漁網・水温上昇）に順応できず、全滅する。</li>
+      <li><b style="color:var(--red)">賢くなりすぎ：</b>知能が70を超えると、知能・食欲・繁殖が勝手に加速する。海は100%マンボウになる。</li>
+      <li><b style="color:var(--teal)">帯の中で30世代：</b>マンボウは、あと2800万年泳ぎ続ける。これが最適解だ。</li>
+    </ul>
+    <h3>操作</h3>
+    <ul>
+      <li class="hard-hide">5つの観察パラメータを見る。斜線ゾーン＝実在のマンボウの値。</li>
+      <li class="hard-only">5つの観察パラメータを見る。どの範囲が「実在」か、図鑑の記述から推測する。</li>
+      <li>対策カードを最大2枚選ぶ。カードは「方針」として毎世代自動適用されます。金色の目盛りが、次の世代の予測値です。方針1・2の×で個別解除、全解除でも消せます。カードのクリックでも切替可能。</li>
+      <li>「観察開始」を押すと世代が自動で進みます。一時停止・速度変更・1世代だけ進める、すべてできます。一時停止中は「次の世代」を連打すると手動運用になります。</li>
+      <li>事故が発生すると進行が止まります。どちらかを選ぶと、パラメータが動きます。</li>
+    </ul>
+    <div class="hard-hide">
+    <h3>注意</h3>
+    <p style="font-size:13px;color:var(--ink-soft)">「脳発育支援」などの救命カードは、パラメータを危険な方向に動かします。勝つには、「親切をやめる」系のカード（野生放置・行動管理・個体数調整）を、きちんと押さなければなりません。</p>
+    </div>
+    <button class="btn" id="howto-close">閉じる</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="incident">
+  <div class="overlay-box inc-box">
+    <div class="inc-kicker">事故報告</div>
+    <h2 id="inc-title" style="font-size:20px"></h2>
+    <p class="inc-body" id="inc-body"></p>
+    <div id="inc-choices"></div>
+  </div>
+</div>
+
+<div class="overlay hidden" id="ending">
+  <div class="overlay-box">
+    <svg class="big-manta" id="end-manta" viewBox="0 0 200 170"><use href="#kawaii-manta"/></svg>
+    <h2 id="end-title"></h2>
+    <div id="end-lines"></div>
+    <div class="postmortem" id="end-post"></div>
+    <div id="end-stats" class="end-stats"></div>
+    <button class="btn" id="btn-again">もう一度観察する（新規ランダム個体群）</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const clamp = v => Math.max(0, Math.min(100, Math.round(v)));
+const ri = (a,b) => a + Math.floor(Math.random()*(b-a+1));
+const pick = arr => arr[Math.floor(Math.random()*arr.length)];
+
+const TOTAL_GENS = 30;
+const OCEAN_CAP = 3e8;
+const GEN_MS = 5000;
+
+const BANDS = {
+  iq:      {lo:50, hi:70, name:'知能 (IQ)', real:'魚としては賢い。人間には遠く及ばない'},
+  surv:    {lo:30, hi:55, name:'生存性',   real:'脆いが、2800万年安定していた'},
+  social:  {lo:40, hi:65, name:'社会性',   real:'ポッド、クリーニングステーション'},
+  appetite:{lo:10, hi:35, name:'食欲（栄養段階）', real:'プランクトンのみ'},
+  growth:  {lo:15, hi:40, name:'繁殖速度', real:'3〜4年に1〜2子'},
+};
+const STAT_KEYS = Object.keys(BANDS);
+
+const CARDS = [
+  {id:'plankton', name:'プランクトン給餌区', fx:{appetite:-7, surv:4}, flavor:'元の食性への回帰。機嫌は良さそう'},
+  {id:'net', name:'巻き込み対策', fx:{surv:6, iq:2}, flavor:'漁網を避ける方法を覚えた。覚えられたのはいいことだ'},
+  {id:'warm', name:'温化適応プログラム', fx:{surv:5, growth:-1}, flavor:'日陰を作った。使われた'},
+  {id:'deep', name:'深海生息域', fx:{surv:4, appetite:-3}, flavor:'1000mまで潜れる。そこは我々が行かない'},
+  {id:'clean', name:'クリーニングステーション', fx:{social:4, appetite:-2, surv:2}, flavor:'お互いの寄生虫を落としている。奇妙に人間臭い'},
+  {id:'wild', name:'野生放置', fx:{iq:-5, appetite:-4, social:-4, growth:-3}, flavor:'親切をやめることにした。不思議と安心した'},
+  {id:'limit', name:'行動管理', fx:{iq:-7, social:-3, appetite:-2}, flavor:'穏やかな認知制限。ちょっと気持ち悪いが、数値は良くなる'},
+  {id:'pop', name:'個体数調整', fx:{growth:-6, surv:3, social:-2}, flavor:'こまめに産まないように伝えた。聞いてきたのが嫌だ'},
+  {id:'brain', name:'脳発育支援', fx:{iq:7, social:3, appetite:2}, flavor:'脳が育っている。そう書いた。意味を考えるな'},
+  {id:'mirror', name:'ミラー・エンリッチメント', fx:{iq:12, social:5, growth:2}, once:true, flavor:'鏡の自分を見た。1回きりの対策'},
+  {id:'talk', name:'通信教育', fx:{social:8, iq:4, appetite:2}, flavor:'ポッド同士が会議を始めた。招待はされていない'},
+  {id:'baby', name:'繁殖支援', fx:{growth:7, appetite:3, surv:-2}, flavor:'たくさん産んでと言った。後悔している'},
+];
+
+const INCIDENTS = [
+  {
+    cond: () => true, w: 1,
+    title: '漁網事故',
+    body: '3匹が漁網に絡まった。漁師が調査船に電話をかけてきた。まだ生きている。多分。',
+    choices: [
+      {label:'救助に向かう', fx:{surv:2}, pop:-0.03, line:'3匹救助した。1匹だけ船首のそばに留まって、こちらを見ていた。'},
+      {label:'何もしない（記録のみ）', fx:{surv:-2}, pop:-0.10, line:'2匹は出られなかった。報告書に書いた。書いたという記憶はない。'},
+    ],
+  },
+  {
+    cond: () => S.stats.iq >= 55, w: 2,
+    title: '研究者の提案',
+    body: '主任研究者が脳発育支援の追加提案書を提出した。「賢い」という言葉が14回使われている。',
+    choices: [
+      {label:'承認する', fx:{iq:8, social:3}, line:'承認した。承認したとき、少しためらっていたのは誰か分からない。'},
+      {label:'却下する', fx:{iq:-3}, line:'却下した。主任研究者が怪しそうな顔をした。正しい顔だ。'},
+    ],
+  },
+  {
+    cond: () => S.stats.iq >= 70, w: 3,
+    title: '漁網が戻ってきた',
+    body: '漁網が岸に打ち上げられていた。修理されている。結び目は本職の手仕事だ。報告書に損害原因欄がある。',
+    choices: [
+      {label:'調査班を送る', fx:{iq:2}, pop:-0.02, line:'現に行った。浅瀬から見ていた。見ていないふりをして帰った。'},
+      {label:'「盗難」と書く', fx:{}, line:'盗難と書いた。誰も質問しなかった。'},
+    ],
+  },
+  {
+    cond: () => S.stats.social >= 60, w: 2,
+    title: 'ポッドが調査船についてくる',
+    body: '12匹のポッドが調査船に3日間つきまとっている。距離は一定。追い越さない。',
+    choices: [
+      {label:'手を振って応じる', fx:{social:5, iq:1}, line:'手を振った。彼らは二手に分かれ、2匹だけ振り返った。見送りと呼ぶなら、見送りだ。'},
+      {label:'背を向けて無視する', fx:{social:-2}, line:'無視した。彼らは隊列を崩さなかった。そのことを考えないようにしている。'},
+    ],
+  },
+  {
+    cond: () => S.stats.appetite >= 55, w: 2,
+    title: '魚群の急減',
+    body: '近海の魚群が急減した。漁業協同組合から原因の照会が来ている。データは一方向を指している。',
+    choices: [
+      {label:'正直に答える', fx:{appetite:-4, surv:2}, line:'マンボウだと言った。会議室が静まった。誰かが、冗談か、と聞いた。'},
+      {label:'「気候変動」と答える', fx:{appetite:2}, line:'気候変動だと言った。全員が頷いた。全員が頷いたのが嫌だった。'},
+    ],
+  },
+  {
+    cond: () => S.stats.iq < 35, w: 2,
+    title: '巻き込み漁の繁忙期',
+    body: '巻き込み漁の繁忙期に入った。去年のこの時期、この海域で死んだのは全体の3分の1だった。',
+    choices: [
+      {label:'緊急救助作戦を展開', fx:{surv:3}, pop:-0.05, line:'助かるものだけを助けた。台帳の残りを書かないでおく。'},
+      {label:'乗り切るしかない', fx:{surv:-4}, pop:-0.18, line:'待っていた。数は減った。それだけだ。'},
+    ],
+  },
+  {
+    cond: () => S.stats.surv >= 45, w: 1,
+    title: 'プランクトンの大発生',
+    body: '10年に一度というプランクトンの大発生が起きている。彼らにとっては、祝祭のようなものらしい。',
+    choices: [
+      {label:'観察に徹する', fx:{growth:2, appetite:-2}, pop:0.06, line:'3日間、食べ続けた。次の世代は丈夫だろう。たぶん。'},
+      {label:'水質サンプルを取る', fx:{surv:1}, line:'サンプルを取った。数値は良好。彼らはその間も食べ続けた。'},
+    ],
+  },
+  {
+    cond: () => S.stats.social >= 75 && S.stats.iq >= 70, w: 3,
+    title: '深海の「構造物」',
+    body: '深海に規則的な形状が確認された。今月、2km伸びた。調査チームは2派に割れている。',
+    choices: [
+      {label:'「地形」と分類する', fx:{}, line:'地形と分類した。形状は40km。まだ動いている。'},
+      {label:'潜水艇を送る', fx:{iq:3, social:3}, pop:-0.01, line:'潜水艇は戻ってきた。映像の向こうで、彼らが船体を並んで囲んでいた。カメラの方を向いていた。'},
+    ],
+  },
+];
+
+const NEWS = {
+  dumb:[
+    '漁網事故。3匹は戻らなかった。',
+    '船を避けようとして、漁網に突っ込んだ。それだけのことだ。',
+    '水温が上がった。弱い個体は静かに死んだ。静かに、と報告書には書いた。',
+  ],
+  grim:[
+    '巻き込み漁の報告が、例年通りだ。例年通りが一番嫌な言葉だ。',
+    'この海は、50年前より2.1度暖かくなっている。',
+    'プランクトンの発生が遅れている。凶作だ。',
+  ],
+  smart:[
+    '漁網が岸に回収された。修理されていた。結び目は本職の手仕事だ。',
+    'マンボウが調査船を40分間見ていた。一度も目を逸らさなかった。',
+    '漁業協同組合：「今月の巻き込みはゼロ。嬉しいが、好きじゃない」',
+    'ソナーが返送を受けていた。エコーではなかった。',
+  ],
+  apex:[
+    '近海の魚群が崩れた。報告書上は原因不明だ。',
+    'イルカが確認された。最後の一頭だった。',
+    '漁業が崩壊している。原因はマンボウだ。全員が知っている。書かないだけだ。',
+  ],
+  social:[
+    'ポッドの編成が、整いすぎている。隊列に見える。',
+    '数千匹のポッドが一直線に移動した。目的地は、誰にも説明できない。',
+    '彼らは話している。内容は聞こえない。',
+  ],
+  society:[
+    '深海に大きな影が動いている。クジラではない。',
+    '深海の構造物が、今月2km伸びた。素材はマンボウだ。',
+    '調査船が護衛された。丁寧に。',
+  ],
+  quiet:[
+    'クリーニングステーションで、彼らは互いの寄生虫を落としていた。',
+    '12匹のポッドが調査船を3km付き添って、勝手に離れた。',
+    '1000mまで潜って帰ってきた。帰る場所があるらしい。',
+    '子と母。何も起きなかった。何も起きなかった、と記録する。',
+  ],
+  generic:[
+    '群れが調査船の横を通り、我々を見上げた。',
+    '子マンボウがプラスチック袋を食べようとして、生き残った。',
+    '天候は良好。海はまだ広い。今のところ。',
+    '省から進捗報告の要求があった。「例年通り」と答えた。それで通った。',
+  ],
+};
+
+let S = null;
+let runNo = 0;
+let started = false;
+let speed = 1;
+let acc = 0, lastTs = 0, lastStateText = '';
+
+/* ---------- mode (easy / hard) ---------- */
+
+let mode = 'easy';
+function loadMode(){
+  try{ const m = localStorage.getItem('manta_mode'); if(m==='hard'||m==='easy') return m; }catch(e){}
+  return 'easy';
+}
+function setMode(m){
+  mode = m;
+  try{ localStorage.setItem('manta_mode', m); }catch(e){}
+  document.body.classList.toggle('hard', m==='hard');
+  $('#mode-easy').classList.toggle('active', m==='easy');
+  $('#mode-hard').classList.toggle('active', m==='hard');
+}
+setMode(loadMode());
+
+/* ---------- run setup ---------- */
+
+function loadRunNo(){
+  try{ return (parseInt(localStorage.getItem('manta_run')||'0',10)||0) + 1; }
+  catch(e){ return (window.__mantaRun||0) + 1; }
+}
+function saveRunNo(){
+  try{ localStorage.setItem('manta_run', String(runNo)); }
+  catch(e){ window.__mantaRun = runNo; }
+}
+
+function rollStats(){
+  let s;
+  for(let i=0;i<100;i++){
+    s = {iq:ri(15,85), surv:ri(15,80), social:ri(15,80), appetite:ri(10,80), growth:ri(10,80)};
+    const out = STAT_KEYS.filter(k => s[k]<BANDS[k].lo || s[k]>BANDS[k].hi);
+    if(out.length>=2) return s;
+  }
+  return s;
+}
+
+function openingLines(st){
+  const out = [];
+  if(st.iq>=70) out.push('初期調査で、もうずいぶん賢くなっている。報告書に「ずいぶん」は書かないが、日誌には書く。');
+  else if(st.iq<35) out.push('初期調査は厳しい。彼らは鈍い。この海に生きるには、鈍すぎる。');
+  if(st.surv<25) out.push('脆い。漁網は善意の有无を選ばない。');
+  if(st.appetite>=60) out.push('胃の内容物が、図鑑より幅広い。濾過摂食の生物にしては、妙に幅広い。');
+  if(st.growth>=65) out.push('図鑑よりよく産む。よく産みすぎだ。');
+  if(st.social>=75) out.push('ポッドの結束が、やけに強い。怪しいほどに強い。');
+  if(!out.length) out.push('静かな個体群だ。図鑑通りだ。');
+  if(out.length>2) out.length = 2;
+  return out;
+}
+
+function newRun(){
+  runNo = loadRunNo();
+  saveRunNo();
+  const stats = rollStats();
+  const pop = ri(150, 600);
+  S = {gen:1, pop, stats, usedOnce:{}, selected:new Set(), over:false,
+       paused:true, eventOpen:false, uiPaused:false, lastEventGen:0, _pending:null,
+       lastNews:'', lastSub:''};
+  acc = 0;
+  $('#journal').innerHTML = '';
+  const open = openingLines(stats);
+  const rate = (pop/OCEAN_CAP*100).toFixed(4);
+  addJournal('調査第' + runNo + '回', [
+    '卵3億個 × 初期生存率 ' + rate + '%',
+    '= <b>' + fmt(pop) + '匹</b> が海に残った。',
+    ...open,
+  ]);
+  S.lastNews = '観察を開始する。卵3億個が海に放たれた。';
+  S.lastSub = open[0];
+  $('#btn-pause').textContent = '観察開始';
+  $('#btn-speed').textContent = '通常速度';
+  speed = 1;
+  $('#run-stamp').textContent = '調査第 ' + runNo + ' 回';
+  $('#incident').classList.add('hidden');
+  render();
+}
+
+/* ---------- model ---------- */
+
+function dist(k,v){ const b = BANDS[k]; return v<b.lo ? b.lo-v : (v>b.hi ? v-b.hi : 0); }
+
+function stability(){
+  let sum = 0;
+  for(const k of STAT_KEYS){
+    const b = BANDS[k];
+    const d = dist(k, S.stats[k]);
+    sum += 1 - Math.min(1, d/(b.hi-b.lo));
+  }
+  return Math.round(100*sum/STAT_KEYS.length);
+}
+
+const cov = () => S.pop/OCEAN_CAP*100;
+
+function applyFxTo(st, ids){
+  const applied = [];
+  for(const id of [...ids]){
+    const c = CARDS.find(x => x.id===id);
+    if(c.once && S.usedOnce[c.id]) continue;
+    for(const k in c.fx) st[k] = clamp(st[k] + c.fx[k]);
+    applied.push(c);
+  }
+  return applied;
+}
+
+function applyDriftTo(st){
+  if(st.iq>=70){ st.iq = clamp(st.iq+1); st.appetite = clamp(st.appetite+1); }
+  else if(st.iq<30){ st.surv = clamp(st.surv-1); }
+  if(st.social>=75) st.iq = clamp(st.iq+1);
+  if(st.appetite>=70) st.growth = clamp(st.growth+1);
+}
+
+function projectedStats(){
+  const s = Object.assign({}, S.stats);
+  applyFxTo(s, S.selected);
+  applyDriftTo(s);
+  return s;
+}
+
+function rates(){
+  const st = S.stats;
+  const g = (st.growth*0.004 + st.appetite*0.002 + st.social*0.001) * (1 + st.iq*0.003);
+  const m = 0.08 + (100-st.surv)*0.0009 + (100-st.iq)*0.0012;
+  return {g, m};
+}
+
+function pickNewsLine(){
+  const st = S.stats;
+  const c = [];
+  const push = (pool,n) => { for(let i=0;i<n;i++) c.push(pick(pool)); };
+  if(st.iq<35) push(NEWS.dumb,2);
+  if(st.surv<30) push(NEWS.grim,2);
+  if(st.iq>=70) push(NEWS.smart,2);
+  if(st.appetite>=75) push(NEWS.apex,2);
+  if(st.social>=80) push(NEWS.social,2);
+  if(st.social>=75 && st.iq>=70) push(NEWS.society,3);
+  if(stability()>=70) push(NEWS.quiet,3);
+  push(NEWS.generic,2);
+  return c.length ? pick(c) : '海は静かだ。マンボウも静かだ。';
+}
+
+function rollIncident(){
+  if(S.gen - S.lastEventGen < 3) return null;
+  if(Math.random() > 0.3) return null;
+  const elig = INCIDENTS.filter(e => e.cond());
+  if(!elig.length) return null;
+  const total = elig.reduce((a,e) => a+e.w, 0);
+  let r = Math.random()*total;
+  for(const e of elig){ r -= e.w; if(r<=0){ S.lastEventGen = S.gen; return e; } }
+  return null;
+}
+
+/* ---------- generation loop ---------- */
+
+function tick(){
+  if(!S || S.over || S.eventOpen) return;
+  S.gen++;
+  const applied = [];
+  for(const id of [...S.selected]){
+    const c = CARDS.find(x => x.id===id);
+    if(c.once && S.usedOnce[c.id]) continue;
+    for(const k in c.fx) S.stats[k] = clamp(S.stats[k] + c.fx[k]);
+    if(c.once) S.usedOnce[c.id] = true;
+    applied.push(c);
+  }
+  applyDriftTo(S.stats);
+  const {g, m} = rates();
+  const before = S.pop;
+  let shock = 0.97 + Math.random()*0.08;
+  if(S.stats.iq<35 && Math.random()<0.5) shock = 0.86 + Math.random()*0.08;
+  S.pop = Math.max(0, S.pop * (1 + g - m) * shock);
+
+  if(S.pop < 30){ finishGen(pickNewsLine(), {before, applied, ev:null}); return; }
+  const ev = rollIncident();
+  if(ev){
+    S.eventOpen = true;
+    S._pending = {before, applied, ev, head:'事故：' + ev.title};
+    showIncident(ev);
+    return;
+  }
+  finishGen(pickNewsLine(), {before, applied, ev:null});
+}
+
+function showIncident(ev){
+  $('#inc-title').textContent = ev.title;
+  $('#inc-body').textContent = ev.body;
+  const box = $('#inc-choices');
+  box.innerHTML = '';
+  ev.choices.forEach((ch, i) => {
+    const b = document.createElement('button');
+    b.className = 'inc-choice';
+    b.textContent = ch.label;
+    b.onclick = () => { $('#incident').classList.add('hidden'); chooseIncident(i); };
+    box.appendChild(b);
+  });
+  $('#incident').classList.remove('hidden');
+}
+
+function chooseIncident(idx){
+  const d = S._pending;
+  const ch = d.ev.choices[idx];
+  for(const k in ch.fx) S.stats[k] = clamp(S.stats[k] + ch.fx[k]);
+  S.pop = Math.max(0, S.pop * (1 + (ch.pop||0)));
+  S.eventOpen = false;
+  S._pending = null;
+  finishGen(d.head, {before:d.before, applied:d.applied, ev:ch});
+}
+
+function finishGen(head, d){
+  const popLine = '個体数: ' + fmt(d.before) + ' → ' + fmt(S.pop);
+  S.lastNews = head;
+  S.lastSub = (d.ev ? '<b>判断：' + d.ev.label + '</b><br>' + d.ev.line + '<br>' : '') + popLine
+    + (d.applied.length ? '<br>対策: ' + d.applied.map(c=>c.name).join('、') : '');
+  const lines = [d.ev ? d.ev.line : null, popLine + (d.applied.length ? '（' + d.applied.map(c=>c.name).join('、') + '）' : '')].filter(Boolean);
+  addJournal('第' + S.gen + '世代', [head, ...lines]);
+  checkEnd();
+  render();
+}
+
+function checkEnd(){
+  if(S.pop < 30){ endGame('extinct'); return; }
+  if(cov() >= 100){ endGame('overflow'); return; }
+  if(S.gen >= 31){ endGame(finalKind()); }
+}
+
+function finalKind(){
+  const st = stability(), c = cov();
+  if(c >= 50) return 'near';
+  if(st >= 70 && S.pop >= 100) return 'true';
+  if(st >= 40) return 'neutral';
+  return 'weird';
+}
+
+/* ---------- endings ---------- */
+
+const ENDINGS = {
+  extinct: {
+    title: '観察終了',
+    lines: s => [
+      '第' + s.gen + '世代。最後のマンボウが台帳に載った。',
+      'マンボウはこの海に2800万年いた。その鎖は、ここで切れた。',
+      '最終記録: ' + fmt(s.pop) + '匹。もう動かない数字だ。',
+    ],
+    post: s => {
+      if(s.stats.iq<40) return '賢さは、漁網を避けるレベルまで育たなかった。親切は、理解できない者には届かない。';
+      if(s.stats.surv<30) return '海は50年前より2度暖かい。脆い者は、善意があっても逃げ切れない。';
+      return '2800万年の鎖は、悪意ではなく不運で切れた。それが悲しい。';
+    },
+  },
+  overflow: {
+    title: '100.00%',
+    lines: s => [
+      '海が、いま、100%マンボウである。',
+      '予算書にはかつて「卵3億個分」と書いてあった。いまの海は、ちょうどマンボウ3億匹分だ。',
+      '彼らに悪意はなかった。賢かっただけだ。それが怖い。',
+    ],
+    post: s => {
+      if(s.stats.iq>=90) return 'あなたは知能を100に育てた。優しかった。それが原因だった。';
+      if(s.stats.appetite>=80) return 'プランクトンを食べ、魚を食べ、最後はすべてを食べた。メニューは彼らが書いた。';
+      return '最適解は最初から「彼らをそのままにしておくこと」だった。';
+    },
+  },
+  near: {
+    title: () => fmtCov(cov()) + '%',
+    lines: s => [
+      '第30世代。観察期間が終わった。海は' + fmtCov(cov()) + '%マンボウだ。',
+      '来月には100%になる。我々は全員、同意している。マンボウも同意している。',
+      '彼らは期日を計算している。それが一番怖い。',
+    ],
+    post: s => '観察は終わった。海は終わっていない。',
+  },
+  true: {
+    title: '第30世代',
+    lines: s => [
+      '観察期間が終わった。マンボウは、まだマンボウだ。',
+      'プランクトン、ポッド、数年に一度のゆっくりした出産。特筆すべきことはない。',
+      '2800万年後も、誰かがこの台帳を書いているかもしれない。それでいい。ちょうどいい。',
+    ],
+    post: s => '特筆すべきことがない。観察にとって、それが最高評価だ。',
+  },
+  neutral: {
+    title: 'まだ泳いでいる',
+    lines: s => [
+      'マンボウは生き延びた。奇跡に近い。',
+      'ただ台帳を見返すと、かつてとまったく同じとは言い切れない。',
+      '生きている。それだけだ。',
+    ],
+    post: s => '彼らは生き延びた。まだ「マンボウ」であるかは、また別の話だ。',
+  },
+  weird: {
+    title: 'もはやマンボウではない',
+    lines: s => [
+      '彼らは生きている。だが資料図鑑は、もう適用できない。',
+      '我々は彼らを良くしようとした。彼らは、我々が説明できない何者かになった。',
+      '次の観察では、ただ……マンボウでいてほしい。',
+    ],
+    post: s => 'あなたは新しい種を作った。おめでとう。お礼を言う者は、誰もいない。',
+  },
+};
+
+function endGame(kind){
+  S.over = true;
+  const e = ENDINGS[kind];
+  const title = typeof e.title === 'function' ? e.title() : e.title;
+  $('#end-title').textContent = title;
+  $('#end-lines').innerHTML = e.lines(S).map(l => '<p>' + l + '</p>').join('');
+  $('#end-post').textContent = '所見：' + e.post(S);
+  const st = S.stats;
+  $('#end-stats').textContent =
+    '調査第' + runNo + '回 — 最終: IQ ' + st.iq + ' / 生存性 ' + st.surv + ' / 社会性 ' + st.social +
+    ' / 食欲 ' + st.appetite + ' / 繁殖速度 ' + st.growth +
+    '\n個体数: ' + fmt(S.pop) + '匹 / 海被覆率: ' + fmtCov(cov()) + '% / 実在マンボウ度: ' + stability() + '%';
+  const manta = $('#end-manta');
+  manta.style.filter = (kind==='extinct') ? 'grayscale(1) brightness(0.8)' :
+    (kind==='true') ? 'none' : 'hue-rotate(-40deg) saturate(1.5)';
+  $('#incident').classList.add('hidden');
+  $('#ending').classList.remove('hidden');
+}
+
+/* ---------- ui ---------- */
+
+function fmt(n){
+  n = Math.max(0, Math.round(n));
+  if(n >= 1e16) return (n/1e16).toFixed(2) + '京';
+  if(n >= 1e12) return (n/1e12).toFixed(2) + '兆';
+  if(n >= 1e8)  return (n/1e8).toFixed(2) + '億';
+  return n.toLocaleString('ja-JP');
+}
+function fmtCov(c){
+  if(c >= 10) return c.toFixed(1);
+  if(c >= 1) return c.toFixed(2);
+  if(c >= 0.01) return c.toFixed(3);
+  return c.toFixed(4);
+}
+
+function addJournal(title, lines){
+  const el = $('#journal');
+  const d = document.createElement('div');
+  d.className = 'j-item';
+  d.innerHTML = '<b>' + title + '</b><br>' + lines.join('<br>');
+  el.prepend(d);
+  while(el.children.length > 60) el.removeChild(el.lastChild);
+}
+
+function buildStats(){
+  const el = $('#stats');
+  el.innerHTML = '';
+  for(const k of STAT_KEYS){
+    const b = BANDS[k];
+    const d = document.createElement('div');
+    d.className = 'stat';
+    d.innerHTML =
+      '<div class="stat-head"><span>' + b.name + '</span><span class="sval"><span class="val" id="val-' + k + '">-</span><span class="proj" id="proj-' + k + '"></span></span></div>' +
+      '<div class="track"><div class="band" style="left:' + b.lo + '%;width:' + (b.hi-b.lo) + '%"></div>' +
+      '<div class="fill" id="fill-' + k + '" style="width:0%"></div>' +
+      '<div class="marker" id="mark-' + k + '" style="display:none"></div></div>' +
+      '<div class="stat-real hard-hide">実在のマンボウ: ' + b.lo + '–' + b.hi + '（' + b.real + '）</div>';
+    el.appendChild(d);
+  }
+}
+
+function fxClass(k, v, dv){
+  const d0 = dist(k, v), d1 = dist(k, clamp(v+dv));
+  if(d1 < d0) return 'fx-toward';
+  if(d1 > d0) return 'fx-away';
+  return dv > 0 ? 'fx-pos' : 'fx-neg';
+}
+
+function renderCards(){
+  const el = $('#cards');
+  el.innerHTML = '';
+  for(const c of CARDS){
+    const off = c.once && S.usedOnce[c.id];
+    const btn = document.createElement('button');
+    btn.className = 'card' + (S.selected.has(c.id) ? ' sel' : '') + (off ? ' off' : '');
+    if(off) btn.disabled = true;
+    const fxHtml = Object.entries(c.fx).map(([k,dv]) =>
+      '<span class="' + fxClass(k, S.stats[k], dv) + '">' + BANDS[k].name.split(' ')[0] + ' ' + (dv>0?'+':'') + dv + '</span>'
+    ).join('<br>');
+    btn.innerHTML = '<div class="card-name">' + c.name + '</div>' +
+      '<div class="card-flavor">' + c.flavor + '</div>' +
+      '<div class="card-fx">' + fxHtml + '</div>';
+    btn.onclick = () => {
+      if(!S || S.over) return;
+      if(S.selected.has(c.id)) S.selected.delete(c.id);
+      else { if(S.selected.size >= 2) return; S.selected.add(c.id); }
+      render();
+    };
+    el.appendChild(btn);
+  }
+  const sel = [...S.selected];
+  for(let i=0;i<2;i++){
+    const name = i < sel.length ? CARDS.find(x=>x.id===sel[i]).name : null;
+    const nameEl = $('#slot-name-' + i);
+    nameEl.textContent = name || '空き';
+    nameEl.style.color = name ? 'var(--ink)' : 'var(--ink-faint)';
+    $('#slot-x-' + i).style.display = name ? 'inline-block' : 'none';
+  }
+}
+
+function render(){
+  const st = S.stats;
+  $('#chip-gen').textContent = Math.min(S.gen, TOTAL_GENS) + ' / ' + TOTAL_GENS;
+  const stab = stability();
+  const stabEl = $('#chip-stab');
+  stabEl.textContent = stab + '%';
+  stabEl.style.color = stab>=70 ? 'var(--teal)' : (stab>=40 ? 'var(--gold)' : 'var(--red)');
+  const c = cov();
+  const covEl = $('#chip-cov');
+  covEl.textContent = fmtCov(c) + '%';
+  covEl.style.color = c>=50 ? 'var(--red)' : 'var(--ink)';
+  $('#panel-status').classList.toggle('sea-danger', c>=50);
+  $('#sea-fill').style.width = Math.min(100, c) + '%';
+  $('#sea-label').textContent =
+    c>=100 ? '海が100%マンボウ' :
+    c>=50 ? '警告：海がマンボウ化している' :
+    c>=1 ? '海が、じわじわと狭くなっている' :
+    c>=0.01 ? '海はほとんどまだ空だ' :
+    '海面は静か';
+
+  $('#pop-num').textContent = fmt(S.pop);
+  $('#pop-sub').textContent = '第' + Math.min(S.gen, TOTAL_GENS) + '世代';
+
+  const proj = projectedStats();
+  if(!$('#stats').children.length) buildStats();
+  for(const k of STAT_KEYS){
+    const v = st[k], b = BANDS[k], p = proj[k];
+    const fill = document.getElementById('fill-' + k);
+    fill.style.width = v + '%';
+    fill.className = 'fill ' + (v>=b.lo && v<=b.hi ? 'in' : (v<b.lo ? 'low' : 'high'));
+    document.getElementById('val-' + k).textContent = v;
+    const projEl = document.getElementById('proj-' + k);
+    const mark = document.getElementById('mark-' + k);
+    if(p !== v){
+      projEl.textContent = '→ ' + p;
+      mark.style.display = 'block';
+      mark.style.left = p + '%';
+    } else {
+      projEl.textContent = '';
+      mark.style.display = 'none';
+    }
+  }
+
+  $('#news-text').textContent = S.lastNews;
+  $('#news-sub').innerHTML = S.lastSub;
+  renderCards();
+
+  $('#timer-label').textContent = S.gen >= TOTAL_GENS ? '最終：第30世代' : '第' + Math.min(S.gen+1, TOTAL_GENS) + '世代へ';
+  updateSwimmerCount();
+  updateTimerState();
+}
+
+function updateTimerState(){
+  if(!started || !S){ lastStateText = '待機中'; }
+  else if(S.over){ lastStateText = '観察終了'; }
+  else if(S.eventOpen){ lastStateText = '事故発生中'; }
+  else if(S.uiPaused){ lastStateText = '停止中（参照中）'; }
+  else if(S.paused){ lastStateText = S.gen === 1 ? '待機中（「観察開始」で進行）' : '一時停止中'; }
+  else { lastStateText = '自動進行'; }
+  if(lastStateText !== $('#timer-state').textContent) $('#timer-state').textContent = lastStateText;
+}
+
+function loop(ts){
+  requestAnimationFrame(loop);
+  const dt = Math.min(200, ts - lastTs);
+  lastTs = ts;
+  const active = started && S && !S.over && !S.paused && !S.eventOpen && !S.uiPaused;
+  if(active){
+    acc += dt * speed;
+    if(acc >= GEN_MS){ acc = 0; tick(); }
+  }
+  const p = (S && !S.over) ? Math.min(1, acc/GEN_MS) : 0;
+  $('#timerfill').style.width = (p*100) + '%';
+  updateTimerState();
+}
+requestAnimationFrame(loop);
+
+/* ---------- ambient (swimming mantas + plankton) ---------- */
+
+const IS_MOBILE = window.innerWidth < 640;
+const SWIMMER_MAX = IS_MOBILE ? 24 : 48;
+const PLANKTON_N = IS_MOBILE ? 18 : 36;
+let swimmers = [];
+let shownSwimmers = 0;
+
+function initAmbient(){
+  const bg = $('#sea-bg');
+  for(let i=0;i<SWIMMER_MAX;i++){
+    const s = document.createElement('div');
+    const dir = Math.random() < 0.5 ? 1 : -1;
+    s.className = 'swimmer' + (dir===-1 ? ' ltr' : '');
+    s.style.top = (4 + Math.random()*88).toFixed(1) + '%';
+    s.style.width = Math.round(40 + Math.random()*90) + 'px';
+    s.style.setProperty('--op', (0.3 + Math.random()*0.3).toFixed(2));
+    s.style.animationDuration = Math.round(45 + Math.random()*70) + 's';
+    s.style.animationDelay = (-Math.random()*100).toFixed(0) + 's';
+    s.innerHTML = '<div class="swim-bob" style="--rot:' + (dir===1 ? 90 : -90) + 'deg;animation-delay:' + (-Math.random()*5).toFixed(1) + 's">' +
+      '<svg viewBox="0 0 200 170"><use href="#kawaii-manta"/></svg></div>';
+    bg.appendChild(s);
+    swimmers.push(s);
+  }
+  for(let i=0;i<PLANKTON_N;i++){
+    const p = document.createElement('div');
+    p.className = 'plankton';
+    const sz = 2 + Math.random()*2.5;
+    p.style.left = (Math.random()*100) + 'vw';
+    p.style.width = sz + 'px';
+    p.style.height = sz + 'px';
+    p.style.opacity = (0.12 + Math.random()*0.28).toFixed(2);
+    p.style.animationDuration = (35 + Math.random()*60) + 's';
+    p.style.animationDelay = (-Math.random()*90) + 's';
+    bg.appendChild(p);
+  }
+}
+
+/* 個体数 → 見えるまんぼうの数（対数スケール） */
+function targetSwimmers(){
+  if(!S || S.pop < 30) return 0;
+  const n = Math.round(4 + 7*Math.log10(Math.max(100, S.pop)/100));
+  return Math.max(1, Math.min(SWIMMER_MAX, n));
+}
+
+function updateSwimmerCount(){
+  const t = targetSwimmers();
+  if(t > shownSwimmers){
+    for(let i=shownSwimmers;i<t;i++) swimmers[i].classList.add('on');
+  } else if(t < shownSwimmers){
+    for(let i=t;i<shownSwimmers;i++) swimmers[i].classList.remove('on');
+  }
+  shownSwimmers = t;
+  $('#sea-bg').classList.toggle('danger', !!(S && cov() >= 50));
+}
+initAmbient();
+
+/* ---------- wiring ---------- */
+
+function openGuide(){ if(S) S.uiPaused = true; $('#guide').classList.remove('hidden'); updateTimerState(); }
+function closeGuide(){ if(S) S.uiPaused = false; $('#guide').classList.add('hidden'); updateTimerState(); }
+function openHowto(){ if(S) S.uiPaused = true; $('#howto').classList.remove('hidden'); updateTimerState(); }
+function closeHowto(){ if(S) S.uiPaused = false; $('#howto').classList.add('hidden'); updateTimerState(); }
+
+$('#btn-start').onclick = () => {
+  $('#intro').classList.add('hidden');
+  started = true;
+  newRun();
+};
+$('#btn-again').onclick = () => {
+  $('#ending').classList.add('hidden');
+  newRun();
+};
+$('#btn-skip').onclick = () => {
+  if(started && S && !S.over && !S.eventOpen && !S.uiPaused){ acc = 0; tick(); }
+};
+$('#btn-pause').onclick = () => {
+  if(!S || S.over) return;
+  S.paused = !S.paused;
+  $('#btn-pause').textContent = S.paused ? '観察開始' : '一時停止';
+  updateTimerState();
+};
+$('#btn-speed').onclick = () => {
+  speed = speed === 1 ? 2 : 1;
+  $('#btn-speed').textContent = speed === 1 ? '通常速度' : '高速';
+};
+for(let i=0;i<2;i++){
+  $('#slot-x-' + i).onclick = () => {
+    const sel = [...S.selected];
+    if(sel[i]) S.selected.delete(sel[i]);
+    render();
+  };
+}
+$('#btn-clear').onclick = () => {
+  if(!S || S.over) return;
+  S.selected = new Set();
+  render();
+};
+$('#btn-guide').onclick = openGuide;
+$('#btn-guide2').onclick = openGuide;
+$('#guide-close').onclick = closeGuide;
+$('#mode-easy').onclick = () => setMode('easy');
+$('#mode-hard').onclick = () => setMode('hard');
+$('#btn-howto').onclick = openHowto;
+$('#btn-howto2').onclick = openHowto;
+$('#howto-close').onclick = closeHowto;
+$('#btn-reroll').onclick = () => {
+  if(!S) return;
+  if(confirm('観察を振り直します。現在の進行は失われます。よろしいですか？')){
+    $('#ending').classList.add('hidden');
+    newRun();
+  }
+};
+</script>
+</body>
+</html>
